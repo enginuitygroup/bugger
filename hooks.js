@@ -47,37 +47,42 @@ http.createServer(function(request, response) {
 function matches_found(webhook_payload, shaOfLastCommit, update_status_callback){
   var diff_json = "";
   var path = "/repos/enginuitygroup/street-smart/compare/staging..." + webhook_payload.pull_request.head.ref + "?access_token=" + process.env.BUGGER_PERSONAL_ACCESS_TOKEN
-  var listOfRegex = [ "\\+.*binding\\.pry", "console\\.log" ];
-  var finalRegex = new RegExp(listOfRegex.join("|"));
-  console.log(finalRegex);
+  var file = "";
+  fs.readFile("debug_match.json", {encoding: "utf8"}, function(err, data){
+    file += data;
 
-  https.get({
-    hostname: "api.github.com"
-    ,path: path
-    ,headers: {"User-Agent": "Mozilla/5.0"}
-  },function(res) {
-    res.on("data", function(chunk) {
-      diff_json += chunk;
-    });
-    res.on("end", function() {
-      var numberOfMatchesFound = 0;
-      diff_json = JSON.parse(diff_json);
-      diff_json.files.forEach(function(element) {
-	if (finalRegex.test(element.patch)) {
-	  numberOfMatchesFound++;
-	}
+    var listOfRegex = JSON.parse(file);
+    var finalRegex = new RegExp(listOfRegex.join("|"));
+    console.log(finalRegex);
+
+    https.get({
+      hostname: "api.github.com"
+      ,path: path
+      ,headers: {"User-Agent": "Mozilla/5.0"}
+    },function(res) {
+      res.on("data", function(chunk) {
+	diff_json += chunk;
       });
+      res.on("end", function() {
+	var numberOfMatchesFound = 0;
+	diff_json = JSON.parse(diff_json);
+	diff_json.files.forEach(function(element) {
+	  if (finalRegex.test(element.patch)) {
+	    numberOfMatchesFound++;
+	  }
+	});
 
-      var match_found = false;
-      if (numberOfMatchesFound > 0) {
-	match_found = true;
-      }
+	var match_found = false;
+	if (numberOfMatchesFound > 0) {
+	  match_found = true;
+	}
 
-      update_status_callback(match_found, shaOfLastCommit);
+	update_status_callback(match_found, shaOfLastCommit);
 
+      });
+    }).on("error", function(e){
+      console.error(e)
     });
-  }).on("error", function(e){
-    console.error(e)
   });
 }
 
