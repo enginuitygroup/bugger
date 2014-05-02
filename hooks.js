@@ -1,6 +1,8 @@
 // TODO : Permission to log in and actually get the diff from a private repo.
 // TODO : push up a status.
 
+var fs = require("fs");
+var fspath = require("path");
 var http = require("http");
 var https = require("https");
 var exec = require("child_process").exec;
@@ -45,6 +47,27 @@ http.createServer(function(request, response) {
 function matches_found(webhook_payload, shaOfLastCommit, update_status_callback){
   var diff_json = "";
   var path = "/repos/enginuitygroup/street-smart/compare/staging..." + webhook_payload.pull_request.head.ref + "?access_token=" + process.env.BUGGER_PERSONAL_ACCESS_TOKEN
+  var file_of_regexps;
+  fs.readFile("/home/ravi/eg/bugger/debug_match.json", {encoding: "UTF8"}, function(err, data) {
+    if (!err) {
+      console.log("JDKJDLKJLDKJD");
+      console.log(data);
+      file_of_regexps = JSON.parse(data);
+    } else {
+      console.log("HGHGH" + err + "HGHGHG")
+    }
+  });
+
+fs.readdir(__dirname, function(err, files){
+  files.forEach(function(file){
+    console.log("reererere" + file);
+  });
+});
+console.log("JKJKJKJ" + JSON.stringify(file_of_regexps));
+  var list_of_regexps = file_of_regexps.map(function(currentValue){
+    new Regexp(currentValue);
+  });
+console.log("UIUIUIU" + list_of_regexps);
   https.get({
     hostname: "api.github.com"
     ,path: path
