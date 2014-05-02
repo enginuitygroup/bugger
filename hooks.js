@@ -1,6 +1,3 @@
-// TODO : Permission to log in and actually get the diff from a private repo.
-// TODO : push up a status.
-
 var fs = require("fs");
 var fspath = require("path");
 var http = require("http");

@@ -1,11 +1,11 @@
 # DOCKER-VERSION 0.10.0
 
-FROM ubuntu:14.04
+FROM ubuntu:latest
 
-RUN apt-get -y install node
+RUN apt-get -y install nodejs
 
 ADD . /src
 
 EXPOSE 8888
 
-CMD node /src/hooks.js
+CMD cd /src; nodejs hooks.js
