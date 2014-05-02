@@ -47,27 +47,10 @@ http.createServer(function(request, response) {
 function matches_found(webhook_payload, shaOfLastCommit, update_status_callback){
   var diff_json = "";
   var path = "/repos/enginuitygroup/street-smart/compare/staging..." + webhook_payload.pull_request.head.ref + "?access_token=" + process.env.BUGGER_PERSONAL_ACCESS_TOKEN
-  var file_of_regexps;
-  fs.readFile("/home/ravi/eg/bugger/debug_match.json", {encoding: "UTF8"}, function(err, data) {
-    if (!err) {
-      console.log("JDKJDLKJLDKJD");
-      console.log(data);
-      file_of_regexps = JSON.parse(data);
-    } else {
-      console.log("HGHGH" + err + "HGHGHG")
-    }
-  });
+  var listOfRegex = [ "\\+.*binding\\.pry", "console\\.log" ];
+  var finalRegex = new RegExp(listOfRegex.join("|"));
+  console.log(finalRegex);
 
-fs.readdir(__dirname, function(err, files){
-  files.forEach(function(file){
-    console.log("reererere" + file);
-  });
-});
-console.log("JKJKJKJ" + JSON.stringify(file_of_regexps));
-  var list_of_regexps = file_of_regexps.map(function(currentValue){
-    new Regexp(currentValue);
-  });
-console.log("UIUIUIU" + list_of_regexps);
   https.get({
     hostname: "api.github.com"
     ,path: path
@@ -80,7 +63,7 @@ console.log("UIUIUIU" + list_of_regexps);
       var numberOfMatchesFound = 0;
       diff_json = JSON.parse(diff_json);
       diff_json.files.forEach(function(element) {
-	if (/\+.*binding\.pry/m.test(element.patch)) {
+	if (finalRegex.test(element.patch)) {
 	  numberOfMatchesFound++;
 	}
       });
@@ -113,6 +96,7 @@ function update_status(match_found, shaOfLastCommit) {
     state: state
     ,description: description
   });
+  console.log("YHYHYH" + statusString);
 
   var path = "/repos/enginuitygroup/street-smart/statuses/" + shaOfLastCommit + "?access_token=" + process.env.BUGGER_PERSONAL_ACCESS_TOKEN
   var req = https.request({
