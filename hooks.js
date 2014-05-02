@@ -10,16 +10,16 @@ http.createServer(function(request, response) {
   if (request.method == "POST") {
 
     // Parse the JSON of the payload.
-    var data = "";
+    var webhook_payload = "";
     request.on("data", function(chunk) {
-      data += chunk;
+      webhook_payload += chunk;
     });
     request.on("end", function() {
-      data = JSON.parse(data);
+      webhook_payload = JSON.parse(webhook_payload);
       var shaOfLastCommit = null;
-      if (data.action != "closed") {
-	var hostname = url.parse(data.pull_request.commits_url).host
-	var path = url.parse(data.pull_request.commits_url).pathname + "?access_token=" + process.env.BUGGER_PERSONAL_ACCESS_TOKEN
+      if (webhook_payload.action != "closed") {
+	var hostname = url.parse(webhook_payload.pull_request.commits_url).host
+	var path = url.parse(webhook_payload.pull_request.commits_url).pathname + "?access_token=" + process.env.BUGGER_PERSONAL_ACCESS_TOKEN
 	https.get({
 	  hostname: hostname
 	  ,path: path
@@ -32,9 +32,9 @@ http.createServer(function(request, response) {
 	  res.on("end", function(){
 	    data = JSON.parse(data);
 	    shaOfLastCommit = data[data.length - 1].sha
+	    matches_found(webhook_payload, shaOfLastCommit, update_status);
 	  })
 	});
-	matches_found(data, update_status);
       }
     });
 
@@ -42,7 +42,7 @@ http.createServer(function(request, response) {
   }
 }).listen(8888);
 
-function matches_found(webhook_payload, update_status_callback){
+function matches_found(webhook_payload, shaOfLastCommit, update_status_callback){
   var diff_json = "";
   var path = "/repos/enginuitygroup/street-smart/compare/staging..." + webhook_payload.pull_request.head.ref + "?access_token=" + process.env.BUGGER_PERSONAL_ACCESS_TOKEN
   https.get({
@@ -67,7 +67,7 @@ function matches_found(webhook_payload, update_status_callback){
 	match_found = true;
       }
 
-      update_status_callback(match_found);
+      update_status_callback(match_found, shaOfLastCommit);
 
     });
   }).on("error", function(e){
@@ -75,7 +75,7 @@ function matches_found(webhook_payload, update_status_callback){
   });
 }
 
-function update_status(match_found) {
+function update_status(match_found, shaOfLastCommit) {
   var state;
   var description;
   if (match_found == true){
@@ -86,12 +86,20 @@ function update_status(match_found) {
     description = "The Bugger found no match for 'binding.pry'"
   };
 
-  var status = {
+  var statusString = JSON.stringify({
     state: state
     ,description: description
-    ,context: "Bugger status"
-  }
-console.log(status);
+  });
 
-
+  var path = "/repos/enginuitygroup/street-smart/statuses/" + shaOfLastCommit + "?access_token=" + process.env.BUGGER_PERSONAL_ACCESS_TOKEN
+  var req = https.request({
+    hostname: "api.github.com"
+    ,path: path
+    ,method: "POST"
+    ,headers: {
+      "User-Agent": "Mozilla/5.0"
+    }
+  }, function(res){});
+  req.write(statusString);
+  req.end();
 }
