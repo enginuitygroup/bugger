@@ -48,7 +48,7 @@ function matches_found(webhook_payload, shaOfLastCommit, update_status_callback)
   var diff_json = "";
   var path = "/repos/enginuitygroup/street-smart/compare/staging..." + webhook_payload.pull_request.head.ref + "?access_token=" + process.env.BUGGER_PERSONAL_ACCESS_TOKEN
   var file = "";
-  fs.readFile("debug_match.json", {encoding: "utf8"}, function(err, data){
+  fs.readFile(process.env.BUGGER_WATCH_LIST, {encoding: "utf8"}, function(err, data){
     file += data;
 
     var listOfRegex = JSON.parse(file);
