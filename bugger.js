@@ -42,6 +42,7 @@ http.createServer(function(request, response) {
 }).listen(8888);
 
 function matches_found(webhook_payload, shaOfLastCommit, update_status_callback){
+  console.log("Looking for matches in commit " + shaOfLastCommit);
   var diff_json = "";
   var path = "/repos/enginuitygroup/street-smart/compare/staging..." + webhook_payload.pull_request.head.ref + "?access_token=" + process.env.BUGGER_PERSONAL_ACCESS_TOKEN
   var file = "";
@@ -50,7 +51,6 @@ function matches_found(webhook_payload, shaOfLastCommit, update_status_callback)
 
     var listOfRegex = JSON.parse(file);
     var finalRegex = new RegExp(listOfRegex.join("|"));
-    console.log(finalRegex);
 
     https.get({
       hostname: "api.github.com"
@@ -98,7 +98,7 @@ function update_status(match_found, shaOfLastCommit) {
     state: state
     ,description: description
   });
-  console.log("YHYHYH" + statusString);
+  console.log("Updating status of " + shaOfLastCommit + " to " + statusString);
 
   var path = "/repos/enginuitygroup/street-smart/statuses/" + shaOfLastCommit + "?access_token=" + process.env.BUGGER_PERSONAL_ACCESS_TOKEN
   var req = https.request({
