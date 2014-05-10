@@ -44,7 +44,11 @@ http.createServer(function(request, response) {
 function matches_found(webhook_payload, shaOfLastCommit, update_status_callback){
   console.log("Looking for matches in commit " + shaOfLastCommit);
   var diff_json = "";
-  var path = "/repos/enginuitygroup/street-smart/compare/staging..." + webhook_payload.pull_request.head.ref + "?access_token=" + process.env.BUGGER_PERSONAL_ACCESS_TOKEN
+  var path = webhook_payload.pull_request.head.repo.compare_url;
+  var master = "master";
+  var pr_commit = webhook_payload.pull_request.head.ref
+  path = path.replace("{base}", master).replace("{head}", pr_commit)
+  path = path + "?access_token=" + process.env.BUGGER_PERSONAL_ACCESS_TOKEN
   var file = "";
   fs.readFile(process.env.BUGGER_WATCH_LIST, {encoding: "utf8"}, function(err, data){
     file += data;
@@ -100,7 +104,7 @@ function update_status(match_found, shaOfLastCommit) {
   });
   console.log("Updating status of " + shaOfLastCommit + " to " + statusString);
 
-  var path = "/repos/enginuitygroup/street-smart/statuses/" + shaOfLastCommit + "?access_token=" + process.env.BUGGER_PERSONAL_ACCESS_TOKEN
+  var path = "/repos/BigBlue79/BrokenArrow/statuses/" + shaOfLastCommit + "?access_token=" + process.env.BUGGER_PERSONAL_ACCESS_TOKEN
   var req = https.request({
     hostname: "api.github.com"
     ,path: path
