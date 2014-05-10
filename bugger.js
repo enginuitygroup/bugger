@@ -19,7 +19,7 @@ http.createServer(function(request, response) {
       if (webhook_payload.action != "closed") {
         var hostname = url.parse(webhook_payload.pull_request.commits_url).host;
         var path = url.parse(webhook_payload.pull_request.commits_url).pathname;
-        path = path + "?access_token=" + process.env.BUGGER_PERSONAL_ACCESS_TOKEN;
+        path += ("?access_token=" + process.env.BUGGER_PERSONAL_ACCESS_TOKEN);
         https.get({
           hostname: hostname
           ,path: path
@@ -27,16 +27,16 @@ http.createServer(function(request, response) {
         }, function(res){
           var data = "";
           res.on("data", function(chunk){
-          data += chunk;
-        });
+            data += chunk;
+          });
           res.on("end", function(){
-          data = JSON.parse(data);
-          shaOfLastCommit = data[data.length - 1].sha;
-          matches_found(webhook_payload, shaOfLastCommit, update_status);
+            data = JSON.parse(data);
+            shaOfLastCommit = data[data.length - 1].sha;
+            matches_found(webhook_payload, shaOfLastCommit, update_status);
+          });
         });
-      });
-    }
-  });
+      }
+    });
 
     response.end();
   }
@@ -49,14 +49,15 @@ function matches_found(webhook_payload, shaOfLastCommit, update_status_callback)
   var base = "master";
   var pr_commit = webhook_payload.pull_request.head.ref;
   var statuses_url = webhook_payload.pull_request.head.repo.statuses_url;
-  path = path.replace("{base}", base).replace("{head}", pr_commit)
-  path = path + "?access_token=" + process.env.BUGGER_PERSONAL_ACCESS_TOKEN
+  path = path.replace("{base}", base).replace("{head}", pr_commit);
+  path +=  ("?access_token=" + process.env.BUGGER_PERSONAL_ACCESS_TOKEN);
   var file = "";
   fs.readFile(process.env.BUGGER_WATCH_LIST, {encoding: "utf8"}, function(err, data){
     file += data;
 
     var listOfRegex = JSON.parse(file);
-    var finalRegex = new RegExp(listOfRegex.join("|"));
+    var leader = "\\+.*"
+    var finalRegex = new RegExp(leader + listOfRegex.join("|"));
 
     https.get({
       hostname: "api.github.com"
@@ -64,27 +65,28 @@ function matches_found(webhook_payload, shaOfLastCommit, update_status_callback)
       ,headers: {"User-Agent": "Mozilla/5.0"}
     },function(res) {
       res.on("data", function(chunk) {
-  diff_json += chunk;
+        diff_json += chunk;
       });
       res.on("end", function() {
-  var numberOfMatchesFound = 0;
-  diff_json = JSON.parse(diff_json);
-  diff_json.files.forEach(function(element) {
-    if (finalRegex.test(element.patch)) {
-      numberOfMatchesFound++;
-    }
-  });
+        var numberOfMatchesFound = 0;
+        diff_json = JSON.parse(diff_json);
+        diff_json.files.forEach(function(element) {
+        if (finalRegex.test(element.patch)) {
+          numberOfMatchesFound++;
+        }
+      });
 
-  var match_found = false;
-  if (numberOfMatchesFound > 0) {
-    match_found = true;
-  }
+      var match_found = false;
+      if (numberOfMatchesFound > 0) {
+        match_found = true;
+      }
 
-  update_status_callback(match_found, statuses_url, shaOfLastCommit);
+      update_status_callback(match_found, statuses_url, shaOfLastCommit);
 
       });
+
     }).on("error", function(e){
-      console.error(e)
+      console.error(e);
     });
   });
 }
@@ -92,21 +94,24 @@ function matches_found(webhook_payload, shaOfLastCommit, update_status_callback)
 function update_status(match_found, statuses_url, shaOfLastCommit) {
   var state;
   var description;
-  if (match_found == true){
+  if (match_found === true){
     state = "failure";
-    description = "The Bugger found a debugging statement in this pull request."
+    description = "The Bugger found a debugging statement in this pull request.";
   } else {
     state = "success";
-    description = "The Bugger found no debugging statements in this pull request."
-  };
+    description = "The Bugger found no debugging statements in this pull request.";
+  }
 
   var statusString = JSON.stringify({
     state: state
     ,description: description
   });
+
   console.log("Updating status of " + shaOfLastCommit + " to " + state + " with the following message: " + description);
 
-  var path = statuses_url.replace("{sha}", shaOfLastCommit) + "?access_token=" + process.env.BUGGER_PERSONAL_ACCESS_TOKEN
+  var path = statuses_url.replace("{sha}", shaOfLastCommit);
+  path += ("?access_token=" + process.env.BUGGER_PERSONAL_ACCESS_TOKEN);
+
   var req = https.request({
     hostname: "api.github.com"
     ,path: path
