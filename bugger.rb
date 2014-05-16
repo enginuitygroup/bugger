@@ -28,7 +28,7 @@ def matches_found? webhook_payload, sha_of_last_commit
     gsub("{base}", "master").
     gsub("{head}", webhook_payload[:pull_request][:head][:ref])
   regexes = Regexp.union JSON.parse(File.read(ENV["BUGGER_WATCH_LIST"]))
-  final_regex = /\+#{regexes}/
+  final_regex = /\+.*#{regexes}/
   number_of_matches = 0
 
   diff = JSON.parse(Faraday.get(path).body, symbolize_names: true)
@@ -51,7 +51,7 @@ def update_status match_found, statuses_url, sha_of_last_commit
     if match_found
       {
         state: "failure",
-        description: "The Bugger found a debugging statement in this pull requestlkjlkjljlj."
+        description: "The Bugger found a debugging statement in this pull request."
       }
     else
       {
