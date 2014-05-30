@@ -1,10 +1,17 @@
 require "sinatra"
 require "json"
 require "pry"
-require "sinatra/reloader"
+require "sinatra/reloader" if development?
 require "faraday"
 require "dotenv"
 Dotenv.load
+
+set :port, 9494
+set :environment, :production
+
+get "/" do
+  "This is the Bugger.  https://github.com/enginuitygroup/bugger"
+end
 
 post "/payload" do
   webhook_payload = JSON.parse(request.body.read, symbolize_names: true)
