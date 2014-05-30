@@ -32,7 +32,7 @@ end
 def matches_found? webhook_payload, sha_of_last_commit
   puts "Looking for matches in commit #{sha_of_last_commit}"
   path = webhook_payload[:pull_request][:head][:repo][:compare_url].
-    gsub("{base}", "master").
+    gsub("{base}", webhook_payload[:pull_request][:head][:repo][:default_branch]).
     gsub("{head}", webhook_payload[:pull_request][:head][:ref])
   regexes = Regexp.union JSON.parse(File.read(ENV["BUGGER_WATCH_LIST"]))
   final_regex = /\+.*#{regexes}/
