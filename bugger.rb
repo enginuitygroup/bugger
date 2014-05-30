@@ -1,10 +1,17 @@
 require "sinatra"
 require "json"
 require "pry"
-require "sinatra/reloader"
+require "sinatra/reloader" if development?
 require "faraday"
 require "dotenv"
 Dotenv.load
+
+set :port, 9494
+set :environment, :production
+
+get "/" do
+  "This is the Bugger.  https://github.com/enginuitygroup/bugger"
+end
 
 post "/payload" do
   webhook_payload = JSON.parse(request.body.read, symbolize_names: true)
@@ -25,13 +32,13 @@ end
 def matches_found? webhook_payload, sha_of_last_commit
   puts "Looking for matches in commit #{sha_of_last_commit}"
   path = webhook_payload[:pull_request][:head][:repo][:compare_url].
-    gsub("{base}", "master").
+    gsub("{base}", webhook_payload[:pull_request][:head][:repo][:default_branch]).
     gsub("{head}", webhook_payload[:pull_request][:head][:ref])
   regexes = Regexp.union JSON.parse(File.read(ENV["BUGGER_WATCH_LIST"]))
   final_regex = /\+.*#{regexes}/
   number_of_matches = 0
 
-  diff = JSON.parse(Faraday.get(path).body, symbolize_names: true)
+  diff = JSON.parse(Faraday.get(path, {access_token: ENV["BUGGER_PERSONAL_ACCESS_TOKEN"]}).body, symbolize_names: true)
 
   diff[:files].each do |file|
     if final_regex =~ file[:patch]
