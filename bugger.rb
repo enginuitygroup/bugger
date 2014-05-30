@@ -38,7 +38,7 @@ def matches_found? webhook_payload, sha_of_last_commit
   final_regex = /\+.*#{regexes}/
   number_of_matches = 0
 
-  diff = JSON.parse(Faraday.get(path).body, symbolize_names: true)
+  diff = JSON.parse(Faraday.get(path, {access_token: ENV["BUGGER_PERSONAL_ACCESS_TOKEN"]}).body, symbolize_names: true)
 
   diff[:files].each do |file|
     if final_regex =~ file[:patch]
