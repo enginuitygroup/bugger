@@ -17,15 +17,13 @@ post "/payload" do
   webhook_payload = JSON.parse(request.body.read, symbolize_names: true)
 
   if webhook_payload[:action] != "closed"
-    diff_of_latest_commit = Faraday.get(webhook_payload[:pull_request][:commits_url], {access_token: ENV["BUGGER_PERSONAL_ACCESS_TOKEN"]})
-    sha_of_last_commit = JSON.parse(diff_of_latest_commit.body, symbolize_names: true).last[:sha]
+    sha_of_last_commit = webhook_payload[:pull_request][:head][:sha]
 
     update_status(
       matches_found?(webhook_payload, sha_of_last_commit),
       webhook_payload[:pull_request][:head][:repo][:statuses_url],
       sha_of_last_commit
     )
-
   end
 end
 
